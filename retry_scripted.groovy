@@ -34,11 +34,6 @@ node {
         currentBuild.result = 'FAILURE'
     }
 
-    // Archive Unit and integration test results, if any
-    junit allowEmptyResults: true,
-            testResults: '**/target/surefire-reports/TEST-*.xml, **/target/failsafe-reports/*.xml'
-
-
     if (currentBuild.result == 'FAILURE') {
         echo "${params.Retry} Job!"
         build quietPeriod: 300, job: 'retry_scripted' 
