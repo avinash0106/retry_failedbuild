@@ -1,57 +1,48 @@
+#!groovy
+
+timestamps {
+    properties([parameters([string(defaultValue: 'Retrying', description: 'Check build before rebuild starts?', name: 'Retry')])])
 node {
-    catchError {
+    try {
 
         stage('Checkout') {
-            checkout scm
+            checkout([$class: 'GitSCM', branches: [[name: '*/main']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url: 'https://github.com/avinash0106/retry_failedbuild.git']]])
         }
 
         stage('Build') {
-            mvn 'clean install -DskipTests'
+            bat 'mvn clean install -DskipTests'
         }
 
         stage('Unit Test') {
-            mvn 'test'
+            bat 'mvn test'
         }
 
         stage('Integration Test') {
-            mvn 'verify -DskipUnitTests -Parq-wildfly-swarm '
+            bat 'mvn verify -DskipUnitTests -Parq-wildfly-swarm'
         }
+
+        stage('SonarQube Analysis') {
+            withSonarQubeEnv(credentialsId: 'sonarscanner') {
+                bat 'mvn sonar:sonar'
+            }
+        }
+        stage() {
+            archiveArtifacts allowEmptyArchive: false, artifacts: 'target//*.war', caseSensitive: true, defaultExcludes: true, fingerprint: false, onlyIfSuccessful: false
+        }
+    } catch (err) {
+        echo 'Pipeline failed'
+        currentBuild.result = 'FAILURE'
     }
 
     // Archive Unit and integration test results, if any
     junit allowEmptyResults: true,
             testResults: '**/target/surefire-reports/TEST-*.xml, **/target/failsafe-reports/*.xml'
 
-    statusChanged {
-        mail to: "${env.EMAIL_RECIPIENTS}",
-                subject: "${JOB_NAME} - Build #${BUILD_NUMBER} - ${currentBuild.currentResult}!",
-                body: "Check console output at ${BUILD_URL} to view the results."
+
+    if (currentBuild.result == 'FAILURE') {
+        echo "${params.Retry} Job!"
+        build quietPeriod: 300, job: 'retry_scripted' 
+       }
     }
 }
 
-def statusChanged(body) {
-    def previousBuild = currentBuild.previousBuild
-    if (previousBuild != null && previousBuild.result != currentBuild.currentResult) {
-        build quietPeriod: 300, job: 'retry_failedbuild' 
-    }
-}
-
-def mvn(def args) {
-    def mvnHome = tool 'M3'
-    def javaHome = tool 'JDK8'
-
-    // Apache Maven related side notes:
-    // --batch-mode : recommended in CI to inform maven to not run in interactive mode (less logs)
-    // -V : strongly recommended in CI, will display the JDK and Maven versions in use.
-    //      Very useful to be quickly sure the selected versions were the ones you think.
-    // -U : force maven to update snapshots each time (default : once an hour, makes no sense in CI).
-    // -Dsurefire.useFile=false : useful in CI. Displays test errors in the logs directly (instead of
-    //                            having to crawl the workspace files to see the cause).
-
-    // Advice: don't define M2_HOME in general. Maven will autodetect its root fine.
-    // See also
-    // https://github.com/jenkinsci/pipeline-examples/blob/master/pipeline-examples/maven-and-jdk-specific-version/mavenAndJdkSpecificVersion.groovy
-    withEnv(["JAVA_HOME=${javaHome}", "PATH+MAVEN=${mvnHome}/bin:${env.JAVA_HOME}/bin"]) {
-        sh "${mvnHome}/bin/mvn ${args} --batch-mode -V -U -e -Dsurefire.useFile=false"
-    }
-}
