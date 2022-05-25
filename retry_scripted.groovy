@@ -32,7 +32,7 @@ node {
 def statusChanged(body) {
     def previousBuild = currentBuild.previousBuild
     if (previousBuild != null && previousBuild.result != currentBuild.currentResult) {
-        ${JOB_NAME}.run  
+        build quietPeriod: 300, job: 'retry_failedbuild' 
     }
 }
 
