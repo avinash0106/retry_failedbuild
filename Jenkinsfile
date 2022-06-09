@@ -4,11 +4,7 @@ timestamps {
     properties([parameters([string(defaultValue: '0', description: 'Do you want to retry this build if it fails? [0 - No],[1 - Yes]', name: 'No', trim: false)])])
 node {
     try {
-
-        stage('Clean WS') {
-            cleanWs()
-        }
-
+        
         stage('Build') {
             sh 'mvn clean install -DskipTests'
         }
@@ -29,6 +25,10 @@ node {
         
         stage('Archive Artifacts') {
             archiveArtifacts allowEmptyArchive: false, artifacts: 'target//*.war', caseSensitive: true, defaultExcludes: true, fingerprint: false, onlyIfSuccessful: false
+        }
+        
+        stage('Clean WS') {
+            cleanWs()
         }
         
     } catch (err) {
