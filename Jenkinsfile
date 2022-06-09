@@ -5,8 +5,8 @@ timestamps {
 node {
     try {
 
-        stage('Checkout') {
-            checkout([$class: 'GitSCM', branches: [[name: '*/main']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url: 'https://github.com/avinash0106/retry_failedbuild.git']]])
+        stage('Clean WS') {
+            cleanWs()
         }
 
         stage('Build') {
