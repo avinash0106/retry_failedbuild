@@ -10,25 +10,27 @@ node {
         }
 
         stage('Build') {
-            bat 'mvn clean install -DskipTests'
+            sh 'mvn clean install -DskipTests'
         }
 
         stage('Unit Test') {
-            bat 'mvn test'
+            sh 'mvn test'
         }
 
         stage('Integration Test') {
-            bat 'mvn verify -DskipUnitTests -Parq-wildfly-swarm'
+            sh 'mvn verify -DskipUnitTests -Parq-wildfly-swarm'
         }
 
         stage('SonarQube Analysis') {
             withSonarQubeEnv(credentialsId: 'sonarscanner') {
-                bat 'mvn sonar:sonar'
+                sh 'mvn sonar:sonar'
             }
         }
-        stage() {
+        
+        stage('Archive Artifacts') {
             archiveArtifacts allowEmptyArchive: false, artifacts: 'target//*.war', caseSensitive: true, defaultExcludes: true, fingerprint: false, onlyIfSuccessful: false
         }
+        
     } catch (err) {
         echo 'Pipeline failed'
         currentBuild.result = 'FAILURE'
