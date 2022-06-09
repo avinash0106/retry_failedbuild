@@ -1,7 +1,7 @@
 #!groovy
 
 timestamps {
-    properties([parameters([string(defaultValue: 'Retrying', description: 'Check build before rebuild starts?', name: 'Retry')])])
+    properties([parameters([string(defaultValue: '0', description: 'No of Times you want to retry?', name: 'No', trim: false)])])
 node {
     try {
 
@@ -33,10 +33,16 @@ node {
         echo 'Pipeline failed'
         currentBuild.result = 'FAILURE'
     }
-
+    
+    if ("${params.No}" == "1" && currentBuild.result == 'FAILURE') {
+        echo "Aborting the build due to failed Retry!"
+        build.getExecutor().interrupt(Result.ABORTED)
+    }
+    
     if (currentBuild.result == 'FAILURE') {
-        echo "${params.Retry} Job!"
-        build quietPeriod: 300, job: 'retry_scripted' 
+        echo "Retrying Job!"
+        currentBuild.addAction(upstreamBuildRun.getAction(hudson.model.ParametersAction))
+        build quietPeriod: 300, job: "${JOB_NAME}" 
        }
     }
 }
