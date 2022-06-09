@@ -1,7 +1,7 @@
 #!groovy
 
 timestamps {
-    properties([parameters([string(defaultValue: '0', description: 'No of Times you want to retry? [0 - No],[1 - Yes]', name: 'No', trim: false)])])
+    properties([parameters([string(defaultValue: '0', description: 'Do you want to retry this build if it fails? [0 - No],[1 - Yes]', name: 'No', trim: false)])])
 node {
     try {
 
