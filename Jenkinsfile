@@ -5,6 +5,10 @@ timestamps {
 node {
     try {
         
+        stage('Clone') {
+            git branch: 'main', url: 'https://github.com/avinash0106/retry_failedbuild.git'
+        }
+        
         stage('Build') {
             sh 'mvn clean install -DskipTests'
         }
