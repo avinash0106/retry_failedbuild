@@ -1,7 +1,7 @@
 #!groovy
 
 timestamps {
-    properties([parameters([choice choices: ['Yes', 'No'], description: 'Retry the build if the fails at any stage.', name: 'Retry'])])
+    properties([parameters([choice(choices: ['Yes', 'No'], description: 'Retry pipeline if fails at any stage.', name: 'Retry')])])
 node {
     try {
         
