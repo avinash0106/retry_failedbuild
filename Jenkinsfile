@@ -47,7 +47,7 @@ node {
     
     if (currentBuild.result == 'FAILURE') {
         echo "Retrying Job!"
-        build quietPeriod: 300, job: "${JOB_NAME}" ,parameters: [choice choices: ['Yes', 'No'], description: 'Retry the build if the fails at any stage.', name: 'Retry']
+        build quietPeriod: 300, job: "${JOB_NAME}"
        }
     }
 }
