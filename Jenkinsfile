@@ -1,7 +1,7 @@
 #!groovy
 
 timestamps {
-    properties([parameters([string(defaultValue: '0', description: 'Do you want to retry this build if it fails? [0 - No],[1 - Yes]', name: 'No', trim: false)])])
+    properties([parameters([choice choices: ['Yes', 'No'], description: 'Retry the build if the fails at any stage.', name: 'Retry'])])
 node {
     try {
         
@@ -40,15 +40,14 @@ node {
         currentBuild.result = 'FAILURE'
     }
     
-    if ("${params.No}" == "1" && currentBuild.result == 'FAILURE') {
+    if ("${params.Retry}" == "Yes" && currentBuild.result == 'FAILURE') {
         echo "Aborting the build due to failed Retry!"
         build.getExecutor().interrupt(Result.ABORTED)
     }
     
     if (currentBuild.result == 'FAILURE') {
         echo "Retrying Job!"
-//         currentBuild.addAction(upstreamBuildRun.getAction(hudson.model.ParametersAction))
-        build quietPeriod: 300, job: "${JOB_NAME}" ,parameters: [string(name: 'No', value: "1")]
+        build quietPeriod: 300, job: "${JOB_NAME}" ,parameters: [choice choices: ['Yes', 'No'], description: 'Retry the build if the fails at any stage.', name: 'Retry']
        }
     }
 }
